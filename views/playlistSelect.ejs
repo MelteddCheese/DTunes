@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Music Streaming App</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="container" id="homepageContainer">
+            <form id="homepageForm" action="/homepage" method="POST">
+                Homepage
+            </form>
+        </div>
+    </div>
+    <div id="main-content">
+        <div class="playlist-header">
+            <!-- style="background-image: url('<%= playlist.image ? playlist.image : '/uploads/default-image-playlist.jpg' %>');"> -->
+            <div class="playlist-info">
+                <div class="playlist-image-container">
+                    <img id="playlistImage" src="<%= playlist.image || '/uploads/default-image-playlist.jpg' %>"
+                        alt="Playlist Image">
+                </div>
+                <div class="playlist-name">
+                    <%= playlist.name %>
+                        <div id="play-button" onclick="sequencePlaylist(<%= JSON.stringify(playlistTracks) %>)">
+                            <i id='play-button' class="fa-solid fa-play"></i>
+                        </div>
+                </div>
+
+                <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data" class="hidden">
+                    <input type="file" name="profileImage" id="profileImageInput" />
+                    <input type="hidden" name="playlistName" value="<%= playlist.name %>" />
+                </form>
+                <i class="fa fa-camera" id="uploadIcon"></i>
+            </div>
+        </div>
+        <div id="tracks">
+            <% playlistTracks.forEach(track=> { %>
+                <div class="track" data-id="<%= track.jamendoId %>" data-audio="<%= track.audio %>"
+                    onclick="playTrack('<%= track.audio %>', '<%= track.name %>', '<%= track.artist_name %>')">
+                    <img src="<%= track.image %>" alt="Album Art">
+                    <div class="track-info">
+                        <h2>
+                            <%= track.name %>
+                        </h2>
+                        <p>Artist: <%= track.artist_name %>
+                        </p>
+                        <button onclick="likeSong('<%= track.jamendoId %>')">Like</button>
+                        <button onclick="dislikeSong('<%= track.jamendoId %>')">Dislike</button>
+                    </div>
+                </div>
+                <% }); %>
+        </div>
+    </div>
+    <div id="audio-player">
+        <div id="now-playing">
+            <p id="now-playing-track"></p>
+            <p id="now-playing-artist"></p>
+        </div>
+        <audio id="audio" controls>
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+    <script src="/js/playlistScripts.js"></script>
+</body>
+
+</html>
