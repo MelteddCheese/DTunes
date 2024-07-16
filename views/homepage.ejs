@@ -13,27 +13,6 @@
 <body>
 
     <div class="sidebar">
-        <!-- <h2>Your Playlists</h2>
-        <ul id="playlists">
-            <% user.playlists.forEach(playlist=> { %>
-                <li>
-                    <%= playlist.name %>
-                </li>
-                <% }); %>
-        </ul>
-        <button onclick="createPlaylist()">Create Playlist</button> -->
-        <!-- <h2>Your Playlists</h2>
-        <div id="playlists">
-            <% user.playlists.forEach(playlist=> { %>
-                <div class="playlist" data-id="<%= playlist._id %>">
-                    <%= playlist.name %>
-                </div>
-                <% }); %>
-        </div>
-        <form id="createPlaylistForm">
-            <input type="text" id="newPlaylistName" placeholder="New Playlist Name" required>
-            <button type="submit">Create Playlist</button>
-        </form> -->
         <div class="playlist-Button" onclick="togglePlaylist()">
             <img src="/images/playlists-thumbnail.jpg" alt="liked-songs">
             <h2>Your Playlists
@@ -59,6 +38,7 @@
             <h2>Notifications ▼</h2>
         </div>
         <div id="notifications" class="hidden">
+            <h3>Friend requests</h3>
             <% receivedRequests.forEach(request=> { %>
                 <div class="requests" data-id="<%= request._id %>">
                     <h3>
@@ -70,26 +50,30 @@
                         onclick="declineFriendRequest('<%= request._id %>',true)">
                 </div>
                 <% }); %>
+                    <h3>Invites to parties</h3>
+                    <% receivedInvites.forEach(invite=>{ %>
+                        <div class="requests" data-id="<%= invite._id %>">
+                            <h3>
+                                <%= invite.from.username %> invited you to a party
+                            </h3>
+                            <img src="/images/accept.png" alt="Accept" onclick="acceptPartyInvite('<%= invite._id %>')">
+                            <img class="decline" src="/images/reject.png" alt="Reject"
+                                onclick="declinePartyInvite('<%= invite._id %>')">
+                        </div>
+                        <% }); %>
         </div>
-        <!-- <div class="profileButton" onclick="showProfile()">
-            <img src="/images/profile.jpg" alt="Profile">
-            <h2>Profile</h2>
-        </div> -->
-        <div class="partymodeButton" onclick="showFriendsToInvite('<% users %>','<% user %>')">
-            <img src="/images/partymode.jpg" alt="Partymode">
-            <h2>Party Mode</h2>
+        <div class="friendsList-button" onclick="toggleFriendsList()">
+            <h2>Friends ▼</h2>
         </div>
-
-        <div id="friendInviteModal" class="hidden">
-            <h2>Invite Friends</h2>
-            <div id="friendsList"></div>
-            <button onclick="closeInviteModal()">Close</button>
-        </div>
-
-        <div id="playlistSelectModal" class="hidden">
-            <h2>Select a Playlist</h2>
-            <div id="playlistsList"></div>
-            <button onclick="closePlaylistModal()">Close</button>
+        <div id="friendDisplay" class="hidden">
+            <% user.friends.forEach(friend=> { %>
+                <div class="friend" data-id="<%= friend %>">
+                    <h4>
+                        <%= friend %>
+                    </h4>
+                    <img src="/images/partymode.jpg" alt="Partymode" onclick="inviteToParty('<%= friend %>')">
+                </div>
+                <% }); %>
         </div>
     </div>
     <div id="main-content">
@@ -112,6 +96,11 @@
             <i class="fa-solid fa-toggle-off" id="toggleSearch" style="cursor: pointer;"></i>
             <button type="submit">Search</button>
         </form>
+        <div id="playlistSelectModal" class="hidden">
+            <h2>Select a Playlist</h2>
+            <div id="playlistsList"></div>
+            <button onclick="closePlaylistModal()">Close</button>
+        </div>
         <% if (tracks) { %>
             <%if(tracks.length>0){%>
                 <div id="tracks">
@@ -125,9 +114,13 @@
                                 </h2>
                                 <p>Artist: <%= track.artist_name %>
                                 </p>
-                                <button onclick="likeSong('<%= track.jamendoId %>')">Like</button>
-                                <button onclick="dislikeSong('<%= track.jamendoId %>')">Dislike</button>
-                                <button onclick="showPlaylistOptions('<%= track.jamendoId %>')">Add to Playlist</button>
+                                <button
+                                    onclick="event.stopPropagation(); likeSong('<%= track.jamendoId %>')">Like</button>
+                                <button
+                                    onclick="event.stopPropagation(); dislikeSong('<%= track.jamendoId %>')">Dislike</button>
+                                <button
+                                    onclick="event.stopPropagation(); showPlaylistOptions('<%= track.jamendoId %>')">Add
+                                    to Playlist</button>
                             </div>
                             <div id="playlist-options-<%= track.jamendoId %>" class="playlist-options"
                                 style="display: none;">
@@ -138,7 +131,8 @@
                                         </option>
                                         <% }); %>
                                 </select>
-                                <button onclick="addToPlaylist('<%= track.jamendoId %>')">Add</button>
+                                <button
+                                    onclick="event.stopPropagation(); addToPlaylist('<%= track.jamendoId %>')">Add</button>
                             </div>
                         </div>
                         <% }); %>
@@ -168,7 +162,8 @@
                                                             onclick="declineFriendRequest('<%= matchingReceivedRequest._id %>')">Decline</button>
                                                         <% } else if (matchingPendingRequest) { %>
                                                             <button class="friend-button" data-status="pending"
-                                                                disabled>Request Sent</button>
+                                                                disabled>Request
+                                                                Sent</button>
                                                             <% } else { %>
                                                                 <button class="friend-button" data-status="none"
                                                                     onclick="sendFriendRequest('<%= people._id %>')">Send

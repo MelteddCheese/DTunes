@@ -5,36 +5,6 @@ const Friend = require('../models/FriendModel');
 const User = require('../models/user');
 const authenticateJWT = require('../middlewares/authMiddleware');
 
-// router.post('/send-request', authenticateJWT, async (req, res) => {
-//     try {
-//         const requesterId = req.user._id;
-//         const receiverId = req.body.receiverId;
-
-//         if (!mongoose.Types.ObjectId.isValid(receiverId)) {
-//             return res.status(400).send('Invalid user ID');
-//         }
-
-//         const presentRequest = await Friend.find({ receiverId: receiverId, requesterId: requesterId });
-
-//         if (!presentRequest) {
-//             const friendRequest = new Friend({
-//                 requester: requesterId,
-//                 receiver: receiverId,
-//                 status: 0  // 0-pending
-//             });
-
-//             await friendRequest.save();
-//             res.status(201).send('Friend request sent');
-//         }
-//         else {
-//             res.status(400).send('Friend request already sent');
-//         }
-//     } catch (error) {
-//         console.error('Error sending friend request:', error);
-//         res.status(500).send('Internal Server Error');
-//     }
-// });
-
 router.post('/send-request', authenticateJWT, async (req, res) => {
     try {
         const requesterId = req.user._id;

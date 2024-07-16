@@ -1,24 +1,6 @@
 let playlist = [];
 let currentTrackIndex = 0;
 
-// const toggleSearch = document.querySelector(`#toggleSearch`);
-
-// toggleSearch.addEventListener("click", function () {
-//     // toggle the type attribute
-//     // const type = Search.getAttribute("type") === "password" ? "text" : "password";
-//     // Search.setAttribute("type", type);
-
-//     // toggle the icon
-//     if (this.classList.contains("fa-toggle-off")) {
-//         this.classList.remove("fa-toggle-off");
-//         this.classList.add("fa-toggle-on");
-//     }
-//     else {
-//         this.classList.remove("fa-toggle-on");
-//         this.classList.add("fa-toggle-off");
-//     }
-// });
-
 function playTrack(audioSrc, trackName, artistName) {
     const audio = document.getElementById('audio');
     const nowPlayingTrack = document.getElementById('now-playing-track');
@@ -30,7 +12,6 @@ function playTrack(audioSrc, trackName, artistName) {
 
     audio.play();
 
-    // Play the next track when the current one ends
     audio.addEventListener('ended', () => {
         playNextTrack();
     });
@@ -68,7 +49,6 @@ function togglePlaylist() {
     playlists.classList.toggle('hidden');
     createPlaylistForm.classList.toggle('hidden');
 
-    // Adjust the "Liked Songs" section position based on playlists visibility
     const likedSongs = document.getElementById('liked-songs');
     if (playlists.classList.contains('hidden')) {
         likedSongs.style.marginTop = '20px';
@@ -184,6 +164,7 @@ function getTokenFromURL() {
 // }
 
 // document.getElementById('homepageForm').addEventListener('submit', handleFormSubmission);
+
 document.addEventListener('submit', function (event) {
     if (event.target && event.target.matches('#homepageForm')) {
         handleFormSubmission(event);
@@ -224,7 +205,7 @@ function dislikeSong(songId) {
 }
 
 function showPlaylistOptions(songId) {
-    event.stopPropagation(); // Prevent the event from bubbling up to the track div
+    event.stopPropagation();
     console.log(`Showing playlist options for Jamendo ID: ${songId}`);
     const dropdown = document.getElementById(`playlist-options-${songId}`);
     dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
@@ -235,6 +216,8 @@ function addToPlaylist(songId) {
     const playlistSelect = document.getElementById(`playlist-select-${songId}`);
     const selectedPlaylistId = playlistSelect.value;
     const jamId = songId;
+    const dropdown = document.getElementById(`playlist-options-${songId}`);
+    dropdown.style.display = dropdown.style.display = 'none';
     console.log(`Adding song with Jamendo ID: ${jamId} to playlist ID: ${selectedPlaylistId}`);
     fetch('/add-to-playlist', {
         method: 'POST',
@@ -247,67 +230,6 @@ function addToPlaylist(songId) {
         .then(message => alert(message))
         .catch(error => console.error('Error adding to playlist:', error));
 }
-
-// function createPlaylist() {
-//     const token = getTokenFromURL();
-//     const playlistName = prompt('Enter playlist name:');
-//     console.log('Enter playlist name:', playlistName);
-//     if (playlistName) {
-//         console.log(playlistName);
-//         fetch('/create-playlist', {
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//                 'Authorization': `Bearer ${token}`
-//             },
-//             body: JSON.stringify({ playlistName })
-//         }).then(response => response.text())
-//             .then(message => alert(message))
-//             .catch(error => console.error('Error creating playlist:', error));
-//     }
-// }
-
-// document.getElementById('createPlaylistForm').addEventListener('submit', function (event) {
-//     event.preventDefault();
-//     const token = getTokenFromURL();
-//     const playlistName = document.getElementById('newPlaylistName').value;
-
-//     if (playlistName) {
-//         fetch('/create-playlist', {
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//                 'Authorization': `Bearer ${token}`
-//             },
-//             body: JSON.stringify({ playlistName })
-//         }).then(response => response.json())
-//             .then(data => {
-//                 if (data.success) {
-//                     const playlistList = document.getElementById('playlists');
-//                     const newPlaylist = document.createElement('div');
-//                     newPlaylist.classList.add('playlist');
-//                     newPlaylist.setAttribute('data-id', data.playlist._id);
-//                     newPlaylist.textContent = data.playlist.name;
-//                     newPlaylist.addEventListener('click', function () {
-//                         // Define your click event logic here
-//                         console.log('Playlist clicked:', data.playlist.name);
-//                     });
-//                     playlistList.appendChild(newPlaylist);
-
-//                     document.getElementById('newPlaylistName').value = '';
-//                 } else {
-//                     alert('Error creating playlist');
-//                 }
-//             })
-//             .catch(error => {
-//                 console.error('Error:', error);
-//             });
-//     }
-//     else {
-//         console.log('Please enter playlist name');
-//     }
-
-// });
 
 function createPlaylist(event) {
     event.preventDefault();
@@ -331,7 +253,6 @@ function createPlaylist(event) {
                     newPlaylist.setAttribute('data-id', data.playlist._id);
                     newPlaylist.textContent = data.playlist.name;
                     newPlaylist.addEventListener('click', function () {
-                        // Define your click event logic here
                         console.log('Playlist clicked:', data.playlist.name);
                     });
                     playlistList.appendChild(newPlaylist);
@@ -355,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function () {
         //console.log('Playlist clicked:', event.target);
         if (event.target && event.target.matches('.playlist')) {
             const playlistId = event.target.getAttribute('data-id');
-            const token = getTokenFromURL(); // Function to get the token from the URL
+            const token = getTokenFromURL();
 
             fetch(`/playlistSelect?playlistId=${playlistId}`, {
                 method: 'GET',
@@ -365,21 +286,18 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.text())
                 .then(html => {
-                    // Replace the page content
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     document.body.innerHTML = doc.body.innerHTML;
 
                     history.pushState(null, '', `/playlistSelect?playlistId=${playlistId}`);
 
-                    // Reattach event listeners
                     document.addEventListener('click', function (event) {
                         if (event.target && event.target.matches('.playlist')) {
                             handlePlaylistClick(event);
                         }
                     });
                     document.getElementById('homepageForm').addEventListener('submit', handleFormSubmission);
-                    // Attach other necessary event listeners
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -387,8 +305,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         else if (event.target && event.target.matches('.likedSongs-Button')) {
             console.log(event.target);
-            const token = getTokenFromURL(); // Function to get the token from the URL
-
+            const token = getTokenFromURL();
             fetch('/likedSongs', {
                 method: 'GET',
                 headers: {
@@ -397,7 +314,6 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.text())
                 .then(html => {
-                    // Replace the page content
                     console.log('page retrieved', html);
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
@@ -456,6 +372,12 @@ function toggleNotifications() {
     const notifications = document.getElementById('notifications');
     notifications.classList.toggle('hidden');
     console.log(notifications.classList);
+}
+
+function toggleFriendsList() {
+    const friendDisplay = document.getElementById('friendDisplay');
+    friendDisplay.classList.toggle('hidden');
+    console.log(friendDisplay.classList);
 }
 
 async function sendFriendRequest(receiverId) {
@@ -563,8 +485,6 @@ async function acceptFriendRequest(friendRequestId, notification = false) {
         else {
             const requestElement = document.querySelector(`.requests[data-id='${friendRequestId}']`);
             requestElement.innerHTML = `<h2>${requestElement.querySelector('h2').textContent} - Request Accepted</h2>`;
-
-            // Optionally, remove the request element after a delay
             setTimeout(() => {
                 requestElement.remove();
             }, 2000);
@@ -595,37 +515,31 @@ async function showFriendsToInvite(users, user) {
     document.getElementById('friendInviteModal').classList.remove('hidden');
 }
 
-async function sendInvite(friendId) {
+async function inviteToParty(friendName) {
     try {
+        console.log(friendName, 'friendname');
         const response = await fetch('/partyInvites/send-invite', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ toId: friendId })
+            body: JSON.stringify({ toName: friendName })
         });
 
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
 
-        alert('Invite sent');
-        closeInviteModal();
+        const result = await response.json();
+        showPlaylistsToSelect(result.inviteId, result.playlists);
     } catch (error) {
         console.error('Error sending invite:', error);
         alert('Failed to send invite');
     }
 }
 
-function closeInviteModal() {
-    document.getElementById('friendInviteModal').classList.add('hidden');
-}
-
-// Similar functions to show and handle playlist selection
-
-async function showPlaylistsToSelect(inviteId) {
-    const response = await fetch('/api/playlists');  // Adjust the endpoint as needed
-    const playlists = await response.json();
+async function showPlaylistsToSelect(inviteId, playlists) {
+    console.log(playlists, inviteId);
     const playlistsList = document.getElementById('playlistsList');
     playlistsList.innerHTML = '';
 
@@ -637,11 +551,19 @@ async function showPlaylistsToSelect(inviteId) {
     });
 
     document.getElementById('playlistSelectModal').classList.remove('hidden');
+    console.log(document.getElementById('playlistSelectModal').classList);
+}
+
+function closePlaylistModal() {
+    document.getElementById('playlistSelectModal').classList.add('hidden');
+}
+function closeInviteModal() {
+    document.getElementById('friendInviteModal').classList.add('hidden');
 }
 
 async function selectPlaylist(inviteId, playlistId) {
     try {
-        const response = await fetch('/friendRequests/select-playlist', {
+        const response = await fetch('/partyInvites/select-playlist', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -661,6 +583,49 @@ async function selectPlaylist(inviteId, playlistId) {
     }
 }
 
-function closePlaylistModal() {
-    document.getElementById('playlistSelectModal').classList.add('hidden');
+async function acceptPartyInvite(inviteId) {
+    try {
+        console.log(inviteId, 'inviteId');
+        const response = await fetch('/partyInvites/accept-invite', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ inviteId })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        alert('Invite accepted');
+        const result = await response.json();
+        showPlaylistsToSelect(inviteId, result.playlists);
+    }
+    catch (error) {
+        console.error('Error accepting invite:', error);
+        alert('Failed to accept invite');
+    }
+}
+
+async function declinePartyInvite(inviteId) {
+    try {
+        console.log(inviteId, 'inviteId');
+        const response = await fetch('/partyInvites/decline-invite', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ inviteId })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        alert('Invite declined');
+    }
+    catch (error) {
+        console.error('Error declining invite:', error);
+        alert('Failed to decline invite');
+    }
 }

@@ -9,7 +9,8 @@ const UserSchema = new mongoose.Schema({
     playlists: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Playlist' }],
     likedSongs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song' }],
     friends: [{ type: String }],
-    accType: { type: String, default: 'user' }
+    accType: { type: String, default: 'user' },
+    partyMode: { type: Boolean, default: false },
 });
 
 UserSchema.plugin(passportLocalMongoose);

@@ -251,13 +251,19 @@ app.post('/homepage', authenticateJWT, async (req, res) => {
         const search = req.body.search || '';
         const searchType = req.body.searchType || 'tracks';
         console.log(`Genre: ${genre}, Search: ${search}`);
+        const users = await User.find().populate('playlists');
+        for (const user of users) {
+            user.playlists = user.playlists.filter(playlist => playlist !== null);
+            await user.save();
+        }
         const user = await User.findById(req.user._id)
             .populate('playlists')
             .populate('likedSongs');
         const receivedRequests = await Friend.find({ receiver: user, status: 0 });
         const pendingRequests = await Friend.find({ requester: user, status: 0 });
-        console.log(receivedRequests, 'received requests');
-        console.log(pendingRequests, 'pending requests');
+        const receivedInvites = await Invite.find({ to: user, status: 0 });
+        // console.log(receivedRequests, 'received requests');
+        // console.log(pendingRequests, 'pending requests');
         if (searchType === 'tracks') {
             const users = await User.find({});
             const params = {
@@ -281,7 +287,7 @@ app.post('/homepage', authenticateJWT, async (req, res) => {
                 jamendoId: track.id
             }));
             await addTracksToDatabase(tracks);
-            console.log(tracks);
+            // console.log(tracks);
             res.render('homepage', {
                 users,
                 tracks,
@@ -289,7 +295,8 @@ app.post('/homepage', authenticateJWT, async (req, res) => {
                 selectedGenre: genre,
                 user: user,
                 receivedRequests,
-                pendingRequests
+                pendingRequests,
+                receivedInvites
             });
         }
         else if (searchType === 'users') {
@@ -297,7 +304,7 @@ app.post('/homepage', authenticateJWT, async (req, res) => {
                 username: { $regex: new RegExp(search, 'i') }
             }).sort({ username: 1 });
 
-            console.log(users);
+            // console.log(users);
 
             res.render('homepage', {
                 users,
@@ -323,6 +330,11 @@ app.get('/homepage', authenticateJWT, async (req, res) => {
         //const user = req.user;
         // const user = req.user.populate('playlists');
         console.log(genre);
+        const userss = await User.find().populate('playlists');
+        for (const user of userss) {
+            user.playlists = user.playlists.filter(playlist => playlist !== null);
+            await user.save();
+        }
         const user = await User.findById(req.user._id)
             .populate('playlists')
             .populate('likedSongs');
@@ -330,6 +342,7 @@ app.get('/homepage', authenticateJWT, async (req, res) => {
         const users = await User.find({});
         const receivedRequests = await Friend.find({ receiver: user, status: 0 });
         const pendingRequests = await Friend.find({ requester: user, status: 0 });
+        const receivedInvites = await Invite.find({ to: user, status: 0 });
 
         const response = await axios.get('https://api.jamendo.com/v3.0/tracks', {
             params: {
@@ -353,7 +366,7 @@ app.get('/homepage', authenticateJWT, async (req, res) => {
 
         await addTracksToDatabase(tracks);
 
-        console.log(tracks);
+        // console.log(tracks);
 
         res.render('homepage', {
             users,
@@ -361,7 +374,8 @@ app.get('/homepage', authenticateJWT, async (req, res) => {
             selectedGenre: genre,
             user: user,
             receivedRequests,
-            pendingRequests
+            pendingRequests,
+            receivedInvites
         });
     } catch (error) {
         console.error('Error fetching data:', error);
@@ -373,7 +387,7 @@ async function getSongDetails(jamendoId) {
     const url = `https://api.jamendo.com/v3.0/tracks?client_id=${JAMENDO_CLIENT_ID}&id=${jamendoId}`;
     try {
         const response = await axios.get(url);
-        console.log(response.data);
+        // console.log(response.data);
         const track = response.data.results[0];
         return {
             name: track.name,
@@ -487,10 +501,8 @@ app.post('/add-to-playlist', authenticateJWT, async (req, res) => {
         let song = await Song.findOne({ jamendoId: songId });
         const numberID = parseInt(songId, 10);
 
-        // Log current playlist songs and their jamendoIds
-        console.log('Current playlist songs:', playlist.songs.map(s => s.jamendoId));
+        //console.log('Current playlist songs:', playlist.songs.map(s => s.jamendoId));
 
-        // Ensure the comparison uses the same type
         const presentSong = playlist.songs.find(song => song.jamendoId === songId.toString());
         console.log(presentSong);
         if (!song && !isNaN(numberID)) {
@@ -531,8 +543,8 @@ app.listen(PORT, () => {
 app.get('/playlistSelect', authenticateJWT, async (req, res) => {
     try {
         const user = req.user;
-        const playlistId = req.query.playlistId; // Use query to get playlistId
-        const playlist = await Playlist.findById(playlistId).populate('songs'); // Populate tracks
+        const playlistId = req.query.playlistId;
+        const playlist = await Playlist.findById(playlistId).populate('songs');
         res.render('playlistSelect', {
             user: user,
             playlistTracks: playlist.songs,
@@ -586,7 +598,6 @@ app.post('/upload', authenticateJWT, upload.single('profileImage'), async (req, 
         const newFilename = `${playlistName}${path.extname(req.file.originalname)}`;
         const newPath = path.join(req.file.destination, newFilename);
 
-        // Rename the file to include the playlist name
         fs.rename(oldPath, newPath, (err) => {
             if (err) {
                 console.error('Error renaming file:', err);
@@ -595,7 +606,6 @@ app.post('/upload', authenticateJWT, upload.single('profileImage'), async (req, 
 
             const imagePath = `/uploads/playlist-image/${newFilename}`;
 
-            // Update the playlist image path in the database
             Playlist.findOneAndUpdate({ name: playlistName, user: user._id }, { image: imagePath }, { new: true })
                 .then(updatedPlaylist => {
                     if (!updatedPlaylist) {
