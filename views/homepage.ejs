@@ -11,7 +11,6 @@
 </head>
 
 <body>
-
     <div class="sidebar">
         <div class="playlist-Button" onclick="togglePlaylist()">
             <img src="/images/playlists-thumbnail.jpg" alt="liked-songs">
@@ -37,47 +36,70 @@
         <div class="notificationsButton" onclick="toggleNotifications()">
             <h2>Notifications ▼</h2>
         </div>
-        <div id="notifications" class="hidden">
+        <div id="history" class="notificationsButton">History</div>
+        <div id="notifications"
+            class="<%= receivedRequests.length === 0 && receivedInvites.length === 0 ? 'hidden' : '' %>">
             <h3>Friend requests</h3>
-            <% receivedRequests.forEach(request=> { %>
-                <div class="requests" data-id="<%= request._id %>">
-                    <h3>
-                        <%= request.requester.username %>
-                    </h3>
-                    <img class="accept" src="/images/accept.png" alt="Accept"
-                        onclick="acceptFriendRequest('<%= request._id %>',true)">
-                    <img class="decline" src="/images/reject.png" alt="Reject"
-                        onclick="declineFriendRequest('<%= request._id %>',true)">
-                </div>
-                <% }); %>
-                    <h3>Invites to parties</h3>
-                    <% receivedInvites.forEach(invite=>{ %>
-                        <div class="requests" data-id="<%= invite._id %>">
-                            <h3>
-                                <%= invite.from.username %> invited you to a party
-                            </h3>
-                            <img src="/images/accept.png" alt="Accept" onclick="acceptPartyInvite('<%= invite._id %>')">
-                            <img class="decline" src="/images/reject.png" alt="Reject"
-                                onclick="declinePartyInvite('<%= invite._id %>')">
-                        </div>
-                        <% }); %>
+            <% if (receivedRequests.length> 0) { %>
+                <% receivedRequests.forEach(request=> { %>
+                    <div class="requests" data-id="<%= request._id %>">
+                        <h3>
+                            <%= request.requester.username %>
+                        </h3>
+                        <img class="accept" src="/images/accept.png" alt="Accept"
+                            onclick="acceptFriendRequest('<%= request._id %>', true)">
+                        <img class="decline" src="/images/reject.png" alt="Reject"
+                            onclick="declineFriendRequest('<%= request._id %>', true)">
+                    </div>
+                    <% }); %>
+                        <% } else { %>
+                            <p>No friend requests</p>
+                            <% } %>
+                                <h3>Invites to parties</h3>
+                                <% if (receivedInvites.length> 0) { %>
+                                    <% receivedInvites.forEach(invite=> { %>
+                                        <div class="requests" data-id="<%= invite._id %>">
+                                            <h3>
+                                                <%= invite.from.username %> invited you to a party
+                                            </h3>
+                                            <img src="/images/accept.png" alt="Accept"
+                                                onclick="acceptPartyInvite('<%= invite._id %>')">
+                                            <img class="decline" src="/images/reject.png" alt="Reject"
+                                                onclick="declinePartyInvite('<%= invite._id %>')">
+                                        </div>
+                                        <% }); %>
+                                            <% } else { %>
+                                                <p>No party invites</p>
+                                                <% } %>
         </div>
+
         <div class="friendsList-button" onclick="toggleFriendsList()">
             <h2>Friends ▼</h2>
         </div>
-        <div id="friendDisplay" class="hidden">
-            <% user.friends.forEach(friend=> { %>
-                <div class="friend" data-id="<%= friend %>">
-                    <h4>
-                        <%= friend %>
-                    </h4>
-                    <img src="/images/partymode.jpg" alt="Partymode" onclick="inviteToParty('<%= friend %>')">
-                </div>
-                <% }); %>
+        <div id="friendDisplay" class="<%= friendsData.length === 0 ? 'hidden' : '' %>">
+            <% if (friendsData.length> 0) { %>
+                <% friendsData.forEach(friend=> { %>
+                    <div class="friend">
+                        <h4>
+                            <%= friend.username %>
+                        </h4>
+                        <% if (friend.currentPlaying) { %>
+                            <p>Listening to: <%= friend.currentPlaying.trackName %> by <%=
+                                        friend.currentPlaying.artistName %>
+                            </p>
+                            <% } else { %>
+                                <p>Not listening to anything right now</p>
+                                <% } %>
+                                    <img src="/images/partymode.jpg" alt="Partymode"
+                                        onclick="inviteToParty('<%= friend.username %>')">
+                    </div>
+                    <% }); %>
+                        <% } %>
         </div>
     </div>
     <div id="main-content">
         <h1>DTunes</h1>
+        <div id="notification" class="notification"></div>
         <form id="homepageForm" action="/homepage" method="POST">
             <label for="genre">Choose a genre:</label>
             <select name="genre" id="genre">
@@ -106,7 +128,8 @@
                 <div id="tracks">
                     <% tracks.forEach(track=> { %>
                         <div class="track" data-id="<%= track.jamendoId %>" data-audio="<%= track.audio %>"
-                            onclick="playTrack('<%= track.audio %>', '<%= track.name %>', '<%= track.artist_name %>')">
+                            data-lyrics="<%= track.lyrics %>"
+                            onclick="playTrack('<%= track.audio %>', '<%= track.name %>', '<%= track.artist_name %>','<%= track.lyrics %>')">
                             <img src="<%= track.image %>" alt="Album Art">
                             <div class="track-info">
                                 <h2>
@@ -184,6 +207,14 @@
         <audio id="audio" controls>
             Your browser does not support the audio element.
         </audio>
+        <button id="show-lyrics-button" onclick="showLyrics()">Show Lyrics</button>
+    </div>
+    <div id="lyrics-modal" class="hidden">
+        <div id="lyrics-content">
+            <button id="close-lyrics-button" onclick="closeLyrics()">Close</button>
+            <h2 id="lyrics-title"></h2>
+            <p id="lyrics-text"></p>
+        </div>
     </div>
     <script src="/js/scripts.js"></script>
 </body>

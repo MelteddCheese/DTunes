@@ -5,6 +5,9 @@ const SongSchema = new mongoose.Schema({
     artist_name: String,
     audio: String,
     image: String,
+    lyrics: String,
+    duration: Number,
+    genre: String,
     jamendoId: { type: String, unique: true }
 });
 

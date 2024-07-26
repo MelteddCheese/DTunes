@@ -55,18 +55,17 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: '/auth/google/callback' // Replace with your callback URL
+    callbackURL: '/auth/google/callback'
 },
     async (accessToken, refreshToken, profile, done) => {
         try {
-            // Check if user already exists in your database based on profile.id or create a new user
             let user = await User.findOne({ googleId: profile.id });
 
             if (!user) {
                 user = new User({
                     googleId: profile.id,
-                    username: profile.displayName, // or other profile data you want to save
-                    // other fields   profile.emails[0].value
+                    username: profile.emails[0].split("@")[0],
+                    //profile.emails[0].value
                 });
                 await user.save();
             }
@@ -78,88 +77,90 @@ passport.use(new GoogleStrategy({
     }
 ));
 
-class DeltaStrategy extends OAuth2Strategy {
-    constructor(options, verify) {
-        options = options || {};
-        // this._oauth2._authorizeUrl = 'https://auth.delta.nitt.edu/authorize';
-        // this._oauth2._accessTokenUrl = 'https://auth.delta.nitt.edu/api/oauth/token';
-        options.authorizationURL = options.authorizationURL || 'https://auth.delta.nitt.edu/authorize';
-        options.tokenURL = options.tokenURL || 'https://auth.delta.nitt.edu/api/oauth/token';
-        super(options, verify);
-        this.name = 'delta';
-    }
+// class DeltaStrategy extends OAuth2Strategy {
+//     constructor(options, verify) {
+//         options = options || {};
+//         // this._oauth2._authorizeUrl = 'https://auth.delta.nitt.edu/authorize';
+//         // this._oauth2._accessTokenUrl = 'https://auth.delta.nitt.edu/api/oauth/token';
+//         options.authorizationURL = options.authorizationURL || 'https://auth.delta.nitt.edu/authorize';
+//         options.tokenURL = options.tokenURL || 'https://auth.delta.nitt.edu/api/oauth/token';
+//         super(options, verify);
+//         this.name = 'delta';
+//     }
 
-    // userProfile(accessToken, done) {
-    //     axios.post('https://auth.delta.nitt.edu/api/resources/user', {}, {
-    //         headers: {
-    //             Authorization: `Bearer ${accessToken}`
-    //         }
-    //     })
-    //         .then(response => {
-    //             const profile = {
-    //                 provider: 'delta',
-    //                 id: response.data.id,
-    //                 username: response.data.email.split('@')[0],
-    //                 displayName: response.data.name,
-    //                 emails: [{ value: response.data.email }]
-    //             };
-    //             done(null, profile);
-    //         })
-    //         .catch(err => done(err));
-    // }
-    userProfile(accessToken, done) {
-        this._oauth2.get('https://auth.delta.nitt.edu/api/resources/user', accessToken, (err, body) => {
-            if (err) {
-                return done(err);
-            }
+//     // userProfile(accessToken, done) {
+//     //     axios.post('https://auth.delta.nitt.edu/api/resources/user', {}, {
+//     //         headers: {
+//     //             Authorization: `Bearer ${accessToken}`
+//     //         }
+//     //     })
+//     //         .then(response => {
+//     //             const profile = {
+//     //                 provider: 'delta',
+//     //                 id: response.data.id,
+//     //                 username: response.data.email.split('@')[0],
+//     //                 displayName: response.data.name,
+//     //                 emails: [{ value: response.data.email }]
+//     //             };
+//     //             done(null, profile);
+//     //         })
+//     //         .catch(err => done(err));
+//     // }
+//     userProfile(accessToken, done) {
+//         this._oauth2.get('https://auth.delta.nitt.edu/api/resources/user', accessToken, (err, body) => {
+//             if (err) {
+//                 return done(err);
+//             }
 
-            try {
-                const json = JSON.parse(body);
-                const profile = {
-                    id: json.id,
-                    username: json.username,
-                    emails: [{ value: json.email }],
-                    displayName: json.name,
-                    provider: 'delta'
-                };
-                done(null, profile);
-            } catch (err) {
-                console.error('Error during delta OAuth handler:', err);
+//             try {
+//                 const json = JSON.parse(body);
+//                 const profile = {
+//                     id: json.id,
+//                     username: json.username,
+//                     emails: [{ value: json.email }],
+//                     displayName: json.name,
+//                     provider: 'delta'
+//                 };
+//                 done(null, profile);
+//             } catch (err) {
+//                 console.error('Error during delta OAuth handler:', err);
 
-                res.status(404).json({
-                    status: "fail",
-                    message: err.message || 'Unknown error',
-                });
-            }
-        });
-    }
-}
+//                 res.status(404).json({
+//                     status: "fail",
+//                     message: err.message || 'Unknown error',
+//                 });
+//             }
+//         });
+//     }
+// }
+// passport.use(new DeltaStrategy({
+//     clientID: process.env.CLIENT_ID_DELTA_OAUTH,
+//     clientSecret: process.env.CLIENT_SECRET_DELTA_OAUTH,
+//     callbackURL: '/auth/delta/callback',
+//     passReqToCallback: true,
+//     grant_type: "authorization_code",
+//     response_type: "code",
+//     scope: "user",
+// }, async (accessToken, refreshToken, profile, done) => {
+//     try {
+//         let user = await User.findOne({ deltaId: profile.id });
 
-passport.use(new DeltaStrategy({
-    clientID: process.env.CLIENT_ID_DELTA_OAUTH,
-    clientSecret: process.env.CLIENT_SECRET_DELTA_OAUTH,
-    callbackURL: '/auth/delta/callback',
-    passReqToCallback: true
-}, async (accessToken, refreshToken, profile, done) => {
-    try {
-        let user = await User.findOne({ deltaId: profile.id });
+//         if (!user) {
+//             user = new User({
+//                 deltaId: profile.id,
+//                 username: profile.username,
+//                 // email: profile.emails[0].value,
+//                 // name: profile.displayName,
+//                 // photo: '/img/users/default-photo.png'
+//             });
+//             await user.save();
+//         }
 
-        if (!user) {
-            user = new User({
-                deltaId: profile.id,
-                username: profile.username,
-                // email: profile.emails[0].value,
-                // name: profile.displayName,
-                // photo: '/img/users/default-photo.png'
-            });
-            await user.save();
-        }
-
-        return done(null, user);
-    } catch (err) {
-        return done(err, false);
-    }
-}));
+//         return done(null, user);
+//     } catch (err) {
+//         return done(err, false);
+//     }
+// }));
 
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
@@ -183,6 +184,7 @@ const authRoutes = require('./routes/auth');
 const friendRequests = require('./routes/friendRequest');
 const friendInvites = require('./routes/friendInvite');
 const errorHand = require('./middlewares/error'); //middlewares
+const songs = require("./models/songs");
 
 app.get('/', (req, res) => {
     res.render('index');
@@ -259,17 +261,32 @@ app.post('/homepage', authenticateJWT, async (req, res) => {
         const user = await User.findById(req.user._id)
             .populate('playlists')
             .populate('likedSongs');
-        const receivedRequests = await Friend.find({ receiver: user, status: 0 });
-        const pendingRequests = await Friend.find({ requester: user, status: 0 });
-        const receivedInvites = await Invite.find({ to: user, status: 0 });
-        // console.log(receivedRequests, 'received requests');
-        // console.log(pendingRequests, 'pending requests');
+        const friendsData = [];
+        for (const friendUsername of user.friends) {
+            const friend = await User.findOne({ username: friendUsername });
+            if (friend) {
+                friendsData.push({
+                    username: friend.username,
+                    currentPlaying: friend.currentPlaying
+                });
+            }
+        }
+        let receivedRequests = [];
+        let pendingRequests = [];
+        let receivedInvites = [];
+        receivedRequests = await Friend.find({ receiver: user, status: 0 }).populate('requester');
+        pendingRequests = await Friend.find({ requester: user, status: 0 }).populate('receiver');
+        receivedInvites = await Invite.find({ to: user, status: 0 }).populate('from');
+        console.log(receivedRequests, 'received requests');
+        console.log(pendingRequests, 'pending requests');
+        console.log(receivedInvites, 'receivedInvites');
         if (searchType === 'tracks') {
             const users = await User.find({});
             const params = {
                 client_id: JAMENDO_CLIENT_ID,
                 limit: 10,
-                format: 'json'
+                format: 'json',
+                include: 'lyrics',
             };
             if (genre) {
                 params.tags = genre;
@@ -284,6 +301,8 @@ app.post('/homepage', authenticateJWT, async (req, res) => {
                 artist_name: track.artist_name,
                 audio: track.audio,
                 image: track.album_image,
+                lyrics: track.lyrics,
+                duration: track.duration,
                 jamendoId: track.id
             }));
             await addTracksToDatabase(tracks);
@@ -296,7 +315,8 @@ app.post('/homepage', authenticateJWT, async (req, res) => {
                 user: user,
                 receivedRequests,
                 pendingRequests,
-                receivedInvites
+                receivedInvites,
+                friendsData
             });
         }
         else if (searchType === 'users') {
@@ -313,7 +333,9 @@ app.post('/homepage', authenticateJWT, async (req, res) => {
                 user: user,
                 tracks: null,
                 receivedRequests,
-                pendingRequests
+                pendingRequests,
+                receivedInvites,
+                friendsData
             });
         }
     } catch (error) {
@@ -330,6 +352,14 @@ app.get('/homepage', authenticateJWT, async (req, res) => {
         //const user = req.user;
         // const user = req.user.populate('playlists');
         console.log(genre);
+        // const userUpdate = await User.find({});
+        // const oneMonthAgo = new Date();
+        // oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+        // for (const user of userUpdate) {
+        //     user.listenedSongs = user.listenedSongs.filter(song => song.listenedAt >= oneMonthAgo);
+        //     await user.save();
+        // }
         const userss = await User.find().populate('playlists');
         for (const user of userss) {
             user.playlists = user.playlists.filter(playlist => playlist !== null);
@@ -338,6 +368,17 @@ app.get('/homepage', authenticateJWT, async (req, res) => {
         const user = await User.findById(req.user._id)
             .populate('playlists')
             .populate('likedSongs');
+
+        const friendsData = [];
+        for (const friendUsername of user.friends) {
+            const friend = await User.findOne({ username: friendUsername });
+            if (friend) {
+                friendsData.push({
+                    username: friend.username,
+                    currentPlaying: friend.currentPlaying
+                });
+            }
+        }
 
         const users = await User.find({});
         const receivedRequests = await Friend.find({ receiver: user, status: 0 });
@@ -349,7 +390,9 @@ app.get('/homepage', authenticateJWT, async (req, res) => {
                 client_id: JAMENDO_CLIENT_ID,
                 limit: 10,
                 format: 'json',
-                tags: genre
+                tags: genre,
+                include: 'lyrics',
+                random: true
             }
         });
 
@@ -361,12 +404,15 @@ app.get('/homepage', authenticateJWT, async (req, res) => {
             artist_name: track.artist_name,
             audio: track.audio,
             image: track.album_image,
-            jamendoId: track.id
+            lyrics: track.lyrics,
+            duration: track.duration,
+            jamendoId: track.id,
+            genre: track.genre
         }));
 
         await addTracksToDatabase(tracks);
 
-        // console.log(tracks);
+        //console.log(tracks);
 
         res.render('homepage', {
             users,
@@ -375,7 +421,8 @@ app.get('/homepage', authenticateJWT, async (req, res) => {
             user: user,
             receivedRequests,
             pendingRequests,
-            receivedInvites
+            receivedInvites,
+            friendsData
         });
     } catch (error) {
         console.error('Error fetching data:', error);
@@ -545,6 +592,7 @@ app.get('/playlistSelect', authenticateJWT, async (req, res) => {
         const user = req.user;
         const playlistId = req.query.playlistId;
         const playlist = await Playlist.findById(playlistId).populate('songs');
+        //const message = req.query.message;
         res.render('playlistSelect', {
             user: user,
             playlistTracks: playlist.songs,
@@ -571,29 +619,68 @@ app.get('/likedSongs', authenticateJWT, async (req, res) => {
     }
 })
 
-// app.post('/upload', upload.single('profileImage'), authenticateJWT, (req, res) => {
-//     console.log('Request Body:', req.body);
-//     const user = req.user;
-//     const playlistName = req.body.playlistName;
-//     const imagePath = `/uploads/playlist-image/${playlistName}${path.extname(req.file.originalname)}`;
+app.post('/update-current-playing', authenticateJWT, async (req, res) => {
+    try {
+        const { trackName, artistName, audioSrc } = req.body;
+        const userId = req.user._id;
+        await User.findByIdAndUpdate(userId, {
+            currentPlaying: { trackName, artistName, audioSrc }
+        });
+        const songId = await songs.findOne({ name: trackName, artistName: artistName })._id;
+        await User.findByIdAndUpdate(req.user._id, {
+            $push: {
+                listenedSongs: { song: songId }
+            }
+        });
+        res.status(200).json({ message: 'Current playing song updated successfully.' });
+    } catch (err) {
+        console.error('Error updating current playing song:', err);
+        res.status(500).json({ message: 'Error updating current playing song' });
+    }
+});
 
-//     Playlist.findOneAndUpdate({ name: playlistName, user: user._id }, { image: imagePath }, { new: true })
-//         .then(updatedPlaylist => {
-//             if (!updatedPlaylist) {
-//                 return res.status(404).send('Playlist not found');
-//             }
-//             res.send('Updated playlist image');
-//         })
-//         .catch(err => {
-//             console.error('Error updating playlist image:', err);
-//             res.status(500).send('Error updating playlist image');
-//         });
-// });
+app.get('/songsHistory', authenticateJWT, async (req, res) => {
+    const user = await User.findById(req.user._id).populate({
+        path: 'listenedSongs.song',
+        populate: { path: 'name artist genre' }
+    });
+    console.log(user);
+    const totalSongs = user.listenedSongs.length;
+    const genreCounts = {};
+    const artistCounts = {};
+
+    user.listenedSongs.forEach(song => {
+        const genre = song.genre;
+        const artist = song.artist;
+        //const language = song.language.name;
+        genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+        artistCounts[artist] = (artistCounts[artist] || 0) + 1;
+    });
+
+    const genreDistribution = Object.entries(genreCounts).map(([genre, count]) => ({
+        genre,
+        percentage: (count / totalSongs) * 100
+    }));
+
+    const artistDistribution = Object.entries(artistCounts).map(([artist, count]) => ({
+        artist,
+        percentage: (count / totalSongs) * 100
+    }));
+
+    console.log(user.listenedSongs);
+    res.render('songHistory', {
+        listenedSongs: user.listenedSongs,
+        genreDistribution,
+        artistDistribution
+    });
+});
+
 
 app.post('/upload', authenticateJWT, upload.single('profileImage'), async (req, res) => {
     try {
         const user = req.user;
         const playlistName = req.body.playlistName;
+        const playlistId = req.body.playlistId;
         const oldPath = req.file.path;
         const newFilename = `${playlistName}${path.extname(req.file.originalname)}`;
         const newPath = path.join(req.file.destination, newFilename);
@@ -611,11 +698,12 @@ app.post('/upload', authenticateJWT, upload.single('profileImage'), async (req, 
                     if (!updatedPlaylist) {
                         return res.status(404).send('Playlist not found');
                     }
-                    res.send('Updated playlist image');
+                    res.redirect(`/playlistSelect?message=Updated playlist image&playlistId=${playlistId}`);
                 })
                 .catch(err => {
                     console.error('Error updating playlist image:', err);
-                    res.status(500).send('Error updating playlist image');
+                    // res.status(500).send('Error updating playlist image');
+                    res.redirect(`/playlistSelect?message=Error updating playlist image&playlistId=${playlistId}`);
                 });
         });
     } catch (err) {

@@ -1,14 +1,50 @@
 let playlist = [];
 let currentTrackIndex = 0;
 
-function playTrack(audioSrc, trackName, artistName) {
+function showNotification(message) {
+    const notification = document.getElementById('notification');
+    notification.innerText = message;
+    notification.classList.add('show');
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 5000);
+}
+
+async function playTrack(audioSrc, trackName, artistName, lyrics) {
+    console.log(lyrics, '=lyrics');
     const audio = document.getElementById('audio');
     const nowPlayingTrack = document.getElementById('now-playing-track');
     const nowPlayingArtist = document.getElementById('now-playing-artist');
+    const lyricsModal = document.getElementById('lyrics-modal');
+    const lyricsTitle = document.getElementById('lyrics-title');
+    const lyricsText = document.getElementById('lyrics-text');
+
+    lyricsTitle.innerText = trackName + ' - ' + artistName;
+    for (i = 0; i < playlist.length; i++) {
+        if (playlist[i].name == trackName && playlist[i].artist_name == artistName) {
+            lyricsText.innerText = playlist[i].lyrics;
+        }
+    }
+    //lyricsText.innerText = lyrics;
+
+    console.log(lyricsText.innerText, 'innertext');
 
     audio.src = audioSrc;
     nowPlayingTrack.textContent = `Track: ${trackName}`;
     nowPlayingArtist.textContent = `Artist: ${artistName}`;
+
+    // Send the update to the server
+    await fetch('/update-current-playing', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            trackName,
+            artistName,
+            audioSrc
+        })
+    });
 
     audio.play();
 
@@ -20,7 +56,7 @@ function playTrack(audioSrc, trackName, artistName) {
 function playNextTrack() {
     currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
     const nextTrack = playlist[currentTrackIndex];
-    playTrack(nextTrack.audio, nextTrack.name, nextTrack.artist_name);
+    playTrack(nextTrack.audio, nextTrack.name, nextTrack.artist_name, nextTrack.lyrics);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -28,11 +64,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const trackElements = document.querySelectorAll('.track');
     trackElements.forEach((trackElement, index) => {
         const audioSrc = trackElement.getAttribute('data-audio');
+        const lyrics = trackElement.getAttribute('data-lyrics');
         const trackName = trackElement.querySelector('.track-info h2').textContent;
         const artistName = trackElement.querySelector('.track-info p').textContent;
         const imageSrc = trackElement.querySelector('img').src;
+        //console.log(lyrics);
 
-        playlist.push({ audio: audioSrc, name: trackName, artist_name: artistName, image: imageSrc });
+        playlist.push({ audio: audioSrc, name: trackName, artist_name: artistName, image: imageSrc, lyrics });
 
         trackElement.addEventListener('click', () => {
             console.log("Play");
@@ -186,7 +224,7 @@ function likeSong(songId) {
         },
         body: JSON.stringify({ songId })
     }).then(response => response.text())
-        .then(message => alert(message))
+        .then(message => showNotification(message))
         .catch(error => console.error('Error liking song:', error));
 }
 
@@ -200,7 +238,7 @@ function dislikeSong(songId) {
         },
         body: JSON.stringify({ songId })
     }).then(response => response.text())
-        .then(message => alert(message))
+        .then(message => showNotification(message))
         .catch(error => console.error('Error disliking song:', error));
 }
 
@@ -227,7 +265,7 @@ function addToPlaylist(songId) {
         },
         body: JSON.stringify({ playlistId: selectedPlaylistId, songId: jamId })
     }).then(response => response.text())
-        .then(message => alert(message))
+        .then(message => showNotification(message))
         .catch(error => console.error('Error adding to playlist:', error));
 }
 
@@ -258,9 +296,9 @@ function createPlaylist(event) {
                     playlistList.appendChild(newPlaylist);
 
                     document.getElementById('newPlaylistName').value = '';
-                    alert('New Playlist created successfully');
+                    showNotification('New Playlist created successfully');
                 } else {
-                    alert('Error creating playlist');
+                    showNotification('Error creating playlist');
                 }
             })
             .catch(error => {
@@ -291,13 +329,34 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.body.innerHTML = doc.body.innerHTML;
 
                     history.pushState(null, '', `/playlistSelect?playlistId=${playlistId}`);
-
-                    document.addEventListener('click', function (event) {
-                        if (event.target && event.target.matches('.playlist')) {
-                            handlePlaylistClick(event);
-                        }
-                    });
+                    // document.addEventListener('click', function (event) {
+                    //     if (event.target && event.target.matches('.playlist')) {
+                    //         handlePlaylistClick(event);
+                    //     }
+                    // });
                     document.getElementById('homepageForm').addEventListener('submit', handleFormSubmission);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+        else if (event.target && event.target.matches('#history')) {
+            const token = getTokenFromURL();
+            fetch('/songsHistory', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    document.body.innerHTML = doc.body.innerHTML;
+
+                    history.pushState(null, '', '/songsHistory');
+
+                    // document.getElementById('homepageForm').addEventListener('submit', handleFormSubmission);
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -395,7 +454,7 @@ async function sendFriendRequest(receiverId) {
         }
 
         const result = await response.text();
-        alert(result);
+        showNotification(result);
         const trackElement = document.querySelector(`.track[data-id='${receiverId}']`);
         const button = trackElement.querySelector('.friend-button[data-status="none"]');
         button.textContent = 'Request Sent';
@@ -404,7 +463,7 @@ async function sendFriendRequest(receiverId) {
         button.setAttribute('data-status', 'pending');
     } catch (error) {
         console.error('Error sending friend request:', error);
-        alert('Failed to send friend request');
+        showNotification('Failed to send friend request');
     }
 }
 
@@ -423,7 +482,7 @@ async function declineFriendRequest(friendRequestId, notification = false) {
         }
 
         const result = await response.text();
-        alert(result);
+        showNotification(result);
 
         if (!notification) {
             const trackElement = document.querySelector(`.track[data-id='${friendRequestId}']`);
@@ -449,7 +508,7 @@ async function declineFriendRequest(friendRequestId, notification = false) {
 
     } catch (error) {
         console.error('Error declining friend request:', error);
-        alert('Failed to decline friend request');
+        showNotification('Failed to decline friend request');
     }
 }
 
@@ -468,7 +527,7 @@ async function acceptFriendRequest(friendRequestId, notification = false) {
         }
 
         const result = await response.text();
-        alert(result);
+        showNotification(result);
 
         if (!notification) {
             const trackElement = document.querySelector(`.track[data-id='${friendRequestId}']`);
@@ -492,7 +551,7 @@ async function acceptFriendRequest(friendRequestId, notification = false) {
 
     } catch (error) {
         console.error('Error accepting friend request:', error);
-        alert('Failed to accept friend request');
+        showNotification('Failed to accept friend request');
     }
 }
 
@@ -527,14 +586,18 @@ async function inviteToParty(friendName) {
         });
 
         if (!response.ok) {
+            const errorText = await response.text();
+            showNotification(errorText);
             throw new Error('Network response was not ok');
         }
 
         const result = await response.json();
+        showNotification('Invite sent successfully');
         showPlaylistsToSelect(result.inviteId, result.playlists);
     } catch (error) {
         console.error('Error sending invite:', error);
-        alert('Failed to send invite');
+        showNotification('Failed to send invite');
+        //showNotification('Failed to send invite');
     }
 }
 
@@ -575,11 +638,11 @@ async function selectPlaylist(inviteId, playlistId) {
             throw new Error('Network response was not ok');
         }
 
-        alert('Playlist selected');
+        showNotification('Playlist selected');
         closePlaylistModal();
     } catch (error) {
         console.error('Error selecting playlist:', error);
-        alert('Failed to select playlist');
+        showNotification('Failed to select playlist');
     }
 }
 
@@ -595,16 +658,19 @@ async function acceptPartyInvite(inviteId) {
         });
 
         if (!response.ok) {
+            const errorText = await response.text();
+            showNotification(errorText);
             throw new Error('Network response was not ok');
         }
 
-        alert('Invite accepted');
+        //showNotification('Invite accepted');
+        showNotification('Invite accepted');
         const result = await response.json();
         showPlaylistsToSelect(inviteId, result.playlists);
     }
     catch (error) {
         console.error('Error accepting invite:', error);
-        alert('Failed to accept invite');
+        showNotification('Failed to accept invite');
     }
 }
 
@@ -622,10 +688,26 @@ async function declinePartyInvite(inviteId) {
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
-        alert('Invite declined');
+        showNotification('Invite declined');
     }
     catch (error) {
         console.error('Error declining invite:', error);
-        alert('Failed to decline invite');
+        showNotification('Failed to decline invite');
     }
+}
+function showLyrics() {
+    const lyricsModal = document.getElementById('lyrics-modal');
+    const lyricsTitle = document.getElementById('lyrics-title');
+    const lyricsText = document.getElementById('lyrics-text');
+    console.log(lyricsText);
+
+    // lyricsTitle.innerText = currentTrack.name + ' - ' + currentTrack.artist_name;
+    // lyricsText.innerText = currentTrack.lyrics;
+
+    lyricsModal.style.display = 'block';
+}
+
+function closeLyrics() {
+    const lyricsModal = document.getElementById('lyrics-modal');
+    lyricsModal.style.display = 'none';
 }

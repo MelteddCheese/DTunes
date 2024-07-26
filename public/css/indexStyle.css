@@ -1,0 +1,106 @@
+body {
+    background-image: url('/images/bg-mainpage.jpg');
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    color: #333;
+}
+
+.register-container {
+    background: #fff;
+    padding: 20px 40px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+    height: 90%;
+}
+
+.register-container h1 {
+    margin-bottom: 20px;
+    color: #4CAF50;
+}
+
+.register-container form {
+    display: flex;
+    flex-direction: column;
+}
+
+.register-container label {
+    margin-bottom: 5px;
+    text-align: left;
+}
+
+.register-container input {
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 90%;
+}
+
+.register-container button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.register-container button:hover {
+    background-color: #45a049;
+}
+
+.register-container a {
+    color: #4CAF50;
+    text-decoration: none;
+}
+
+.register-container a:hover {
+    text-decoration: underline;
+}
+
+.register-container p {
+    margin: 10px 0;
+}
+
+.social-login {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.social-login a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin: 5px 0;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #333;
+    transition: background-color 0.3s;
+}
+
+.social-login a:hover {
+    background-color: #f0f0f0;
+}
+
+.social-login img {
+    margin-right: 10px;
+    width: 20px;
+    height: 20px;
+}
+
+.credentials {
+    text-align: left;
+}

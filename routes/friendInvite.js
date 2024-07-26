@@ -24,6 +24,10 @@ router.post('/send-invite', authenticateJWT, async (req, res) => {
         const toId = toUser._id;
         const fromUser = await User.findById(fromId).populate('playlists');
         const playlistOptions = fromUser.playlists;
+        if (playlistOptions.length == 0) {
+            console.error('User has no playlists');
+            return res.status(400).send('User has no playlists');
+        }
         console.log('Creating invite:', { fromId, toId, playlistOptions });
         const invitePresent = await Invite.findOne({ from: fromId, to: toId });
         if (!invitePresent) {
@@ -110,11 +114,15 @@ router.post('/accept-invite', authenticateJWT, async (req, res) => {
             return res.status(400).send('inviteId is required');
         }
         const invite = await Invite.findById(inviteId);
-        invite.status = 1;
-        await invite.save();
         const toId = invite.to;
         const toUser = await User.findById(toId).populate('playlists');
         const playlistOptions = toUser.playlists;
+        if (playlistOptions.length == 0) {
+            console.error('User has no playlists');
+            return res.status(400).send('User has no playlists..Create playlist to accept invite request');
+        }
+        invite.status = 1;
+        await invite.save();
         console.log('Invite accepted:', invite);
         res.status(201).json({ playlists: playlistOptions });
     } catch (error) {

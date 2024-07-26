@@ -11,6 +11,15 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+function showNotification(message) {
+    const notification = document.getElementById('notification');
+    notification.innerText = message;
+    notification.classList.add('show');
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 5000);
+}
+
 let currentTrackIndex = 0;
 let tracks = [];
 

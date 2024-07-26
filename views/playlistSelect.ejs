@@ -11,63 +11,66 @@
 </head>
 
 <body>
-    <div class="sidebar">
-        <div class="container" id="homepageContainer">
-            <form id="homepageForm" action="/homepage" method="POST">
-                Homepage
-            </form>
-        </div>
-    </div>
-    <div id="main-content">
-        <div class="playlist-header">
-            <!-- style="background-image: url('<%= playlist.image ? playlist.image : '/uploads/default-image-playlist.jpg' %>');"> -->
-            <div class="playlist-info">
-                <div class="playlist-image-container">
-                    <img id="playlistImage" src="<%= playlist.image || '/uploads/default-image-playlist.jpg' %>"
-                        alt="Playlist Image">
-                </div>
-                <div class="playlist-name">
-                    <%= playlist.name %>
-                        <div id="play-button" onclick="sequencePlaylist(<%= JSON.stringify(playlistTracks) %>)">
-                            <i id='play-button' class="fa-solid fa-play"></i>
-                        </div>
-                </div>
+    <% if(locals.message){showNotification(message)}%>
 
-                <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data" class="hidden">
-                    <input type="file" name="profileImage" id="profileImageInput" />
-                    <input type="hidden" name="playlistName" value="<%= playlist.name %>" />
+        <div class="sidebar">
+            <div class="container" id="homepageContainer">
+                <form id="homepageForm" action="/homepage" method="POST">
+                    Homepage
                 </form>
-                <i class="fa fa-camera" id="uploadIcon"></i>
             </div>
         </div>
-        <div id="tracks">
-            <% playlistTracks.forEach(track=> { %>
-                <div class="track" data-id="<%= track.jamendoId %>" data-audio="<%= track.audio %>"
-                    onclick="playTrack('<%= track.audio %>', '<%= track.name %>', '<%= track.artist_name %>')">
-                    <img src="<%= track.image %>" alt="Album Art">
-                    <div class="track-info">
-                        <h2>
-                            <%= track.name %>
-                        </h2>
-                        <p>Artist: <%= track.artist_name %>
-                        </p>
-                        <button onclick="likeSong('<%= track.jamendoId %>')">Like</button>
-                        <button onclick="dislikeSong('<%= track.jamendoId %>')">Dislike</button>
+        <div id="main-content">
+            <div id="notification" class="notification"></div>
+            <div class="playlist-header">
+                <!-- style="background-image: url('<%= playlist.image ? playlist.image : '/uploads/default-image-playlist.jpg' %>');"> -->
+                <div class="playlist-info">
+                    <div class="playlist-image-container">
+                        <img id="playlistImage" src="<%= playlist.image || '/uploads/default-image-playlist.jpg' %>"
+                            alt="Playlist Image">
                     </div>
+                    <div class="playlist-name">
+                        <%= playlist.name %>
+                            <div id="play-button" onclick="sequencePlaylist(<%= JSON.stringify(playlistTracks) %>)">
+                                <i id='play-button' class="fa-solid fa-play"></i>
+                            </div>
+                    </div>
+                    <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data" class="hidden">
+                        <input type="file" name="profileImage" id="profileImageInput" />
+                        <input type="hidden" name="playlistName" value="<%= playlist.name %>" />
+                        <input type="hidden" name="playlistId" value="<%= playlist._id %>" />
+                    </form>
+                    <i class="fa fa-camera" id="uploadIcon"></i>
                 </div>
-                <% }); %>
+            </div>
+            <div id="tracks">
+                <% playlistTracks.forEach(track=> { %>
+                    <div class="track" data-id="<%= track.jamendoId %>" data-audio="<%= track.audio %>"
+                        onclick="playTrack('<%= track.audio %>', '<%= track.name %>', '<%= track.artist_name %>')">
+                        <img src="<%= track.image %>" alt="Album Art">
+                        <div class="track-info">
+                            <h2>
+                                <%= track.name %>
+                            </h2>
+                            <p>Artist: <%= track.artist_name %>
+                            </p>
+                            <button onclick="likeSong('<%= track.jamendoId %>')">Like</button>
+                            <button onclick="dislikeSong('<%= track.jamendoId %>')">Dislike</button>
+                        </div>
+                    </div>
+                    <% }); %>
+            </div>
         </div>
-    </div>
-    <div id="audio-player">
-        <div id="now-playing">
-            <p id="now-playing-track"></p>
-            <p id="now-playing-artist"></p>
+        <div id="audio-player">
+            <div id="now-playing">
+                <p id="now-playing-track"></p>
+                <p id="now-playing-artist"></p>
+            </div>
+            <audio id="audio" controls>
+                Your browser does not support the audio element.
+            </audio>
         </div>
-        <audio id="audio" controls>
-            Your browser does not support the audio element.
-        </audio>
-    </div>
-    <script src="/js/playlistScripts.js"></script>
+        <script src="/js/playlistScripts.js"></script>
 </body>
 
 </html>

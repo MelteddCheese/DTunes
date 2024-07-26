@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listening History</title>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .chart {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="javascript:history.back()" class="back-button">Back</a>
+        <h1>Listening History</h1>
+
+        <div class="chart">
+            <h2>Genre Distribution</h2>
+            <ul>
+                <% genreDistribution.forEach(item=> { %>
+                    <li>
+                        <%= item.genre %>: <%= item.percentage.toFixed(2) %>%
+                    </li>
+                    <% }); %>
+            </ul>
+        </div>
+
+        <div class="chart">
+            <h2>Artist Distribution</h2>
+            <ul>
+                <% artistDistribution.forEach(item=> { %>
+                    <li>
+                        <%= item.artist %>: <%= item.percentage.toFixed(2) %>%
+                    </li>
+                    <% }); %>
+            </ul>
+        </div>
+
+        <h2>Listened Songs</h2>
+        <ul>
+            <% listenedSongs.forEach(songs=> { %>
+                <li>
+                    <%= songs.song.name %> by <%= songs.song.artist_name %>
+                            (Listened on <%= new Date(songs.listenedAt).toLocaleDateString() %>)
+                </li>
+                <% }); %>
+        </ul>
+    </div>
+</body>
+
+</html>
