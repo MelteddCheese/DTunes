@@ -16,12 +16,10 @@ const UserSchema = new mongoose.Schema({
         artistName: String,
         audioSrc: String
     },
-    listenedSongs: [{
-        song: { type: mongoose.Schema.Types.ObjectId, ref: 'Song' },
-        listenedAt: { type: Date, default: Date.now }
-        // genre: String,
-        // artist: String,
-    }]
+    listenedSongs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song' }]
+    // listenedAt: { type: Date, default: Date.now }
+    // genre: String,
+    // artist: String,
 });
 
 UserSchema.plugin(passportLocalMongoose);
@@ -37,3 +35,5 @@ UserSchema.pre('findOne', function (next) {
 });
 
 module.exports = mongoose.model('User', UserSchema);
+
+// (Listened on <%= new Date(songs.listenedAt).toLocaleDateString() %>)

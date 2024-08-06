@@ -10,22 +10,26 @@ function showNotification(message) {
     }, 5000);
 }
 
-async function playTrack(audioSrc, trackName, artistName, lyrics) {
+async function playTrack(audioSrc, trackName, artistName, lyrics, jamendoId) {
     console.log(lyrics, '=lyrics');
+    console.log(artistName, jamendoId);
     const audio = document.getElementById('audio');
     const nowPlayingTrack = document.getElementById('now-playing-track');
     const nowPlayingArtist = document.getElementById('now-playing-artist');
     const lyricsModal = document.getElementById('lyrics-modal');
     const lyricsTitle = document.getElementById('lyrics-title');
     const lyricsText = document.getElementById('lyrics-text');
+    let id = '';
 
     lyricsTitle.innerText = trackName + ' - ' + artistName;
     for (i = 0; i < playlist.length; i++) {
         if (playlist[i].name == trackName && playlist[i].artist_name == artistName) {
             lyricsText.innerText = playlist[i].lyrics;
+            id = playlist[i].jamendoId;
         }
     }
     //lyricsText.innerText = lyrics;
+    console.log('id', id);
 
     console.log(lyricsText.innerText, 'innertext');
 
@@ -42,7 +46,8 @@ async function playTrack(audioSrc, trackName, artistName, lyrics) {
         body: JSON.stringify({
             trackName,
             artistName,
-            audioSrc
+            audioSrc,
+            jamendoId: id,
         })
     });
 
@@ -56,7 +61,7 @@ async function playTrack(audioSrc, trackName, artistName, lyrics) {
 function playNextTrack() {
     currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
     const nextTrack = playlist[currentTrackIndex];
-    playTrack(nextTrack.audio, nextTrack.name, nextTrack.artist_name, nextTrack.lyrics);
+    playTrack(nextTrack.audio, nextTrack.name, nextTrack.artist_name, nextTrack.lyrics, nextTrack.jamendoId);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -66,11 +71,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const audioSrc = trackElement.getAttribute('data-audio');
         const lyrics = trackElement.getAttribute('data-lyrics');
         const trackName = trackElement.querySelector('.track-info h2').textContent;
-        const artistName = trackElement.querySelector('.track-info p').textContent;
+        const artistName = trackElement.getAttribute('data-artist');
         const imageSrc = trackElement.querySelector('img').src;
+        const jamendoId = trackElement.getAttribute('data-id');
         //console.log(lyrics);
 
-        playlist.push({ audio: audioSrc, name: trackName, artist_name: artistName, image: imageSrc, lyrics });
+        playlist.push({ audio: audioSrc, name: trackName, artist_name: artistName, image: imageSrc, lyrics, jamendoId });
 
         trackElement.addEventListener('click', () => {
             console.log("Play");
@@ -79,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("played");
         });
     });
+    console.log(playlist);
 });
 
 function togglePlaylist() {

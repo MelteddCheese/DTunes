@@ -3,7 +3,6 @@ const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const qs = require('qs');
-const cookieParser = require('cookie-parser');
 const User = require('../models/user');
 require('dotenv').config();
 
@@ -40,13 +39,12 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 
 router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/' }), (req, res) => {
     const token = jwt.sign({ userId: req.user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.cookie('token', token, { httpOnly: true, secure: true });
+    res.cookie('token', token, { httpOnly: true, secure: true, maxAge: 60 * 60 * 1000 });
     res.redirect(`/auth/profile?token=${token}`);
 });
 
-// Route to get the Delta OAuth URL and redirect the user
 router.get('/delta', (req, res) => {
-    const rootUrl = "https://auth.delta.nitt.edu/authorize";
+    const authUrl = "https://auth.delta.nitt.edu/authorize";
     const options = {
         redirect_uri: process.env.DELTA_REDIRECT_URL,
         client_id: process.env.CLIENT_ID_DELTA_OAUTH,
@@ -54,27 +52,14 @@ router.get('/delta', (req, res) => {
         scope: "user",
     };
     const qs = new URLSearchParams(options);
-    res.redirect(`${rootUrl}?${qs.toString()}`);
+    res.redirect(`${authUrl}?${qs.toString()}`);
 });
 
-// Callback route after user authorizes the application
 router.get('/delta/callback', async (req, res) => {
     try {
         const code = req.query.code;
         const { access_token } = await getDauthToken(code);
         const deltaUser = await getDeltaUser({ access_token });
-
-        // let user = await findAndUpdateUser(
-        //     { deltaId: deltaUser.id },
-        //     {
-        //         deltaId: deltaUser.id,
-        //         username: deltaUser.email.split("@")[0],
-        //         email: deltaUser.email,
-        //         displayName: deltaUser.name,
-        //     },
-        //     { upsert: true, new: true }
-        // );
-
         let user = await User.findOne({ dauthId: deltaUser.id });
         if (!user) {
             user = new User({
@@ -83,12 +68,10 @@ router.get('/delta/callback', async (req, res) => {
             });
             await user.save();
         }
-
         const token = CreateAndSendToken(user, 200, res);
         res.redirect(`/auth/profile?token=${token}`);
     } catch (err) {
         console.error(err);
-
         res.status(404).json({
             status: "fail",
             message: err.message || 'Error during Delta OAuth process',
@@ -99,14 +82,14 @@ router.get('/delta/callback', async (req, res) => {
 const getDauthToken = async (code) => {
     try {
         const url = "https://auth.delta.nitt.edu/api/oauth/token";
-        const value = {
+        const params = {
             code,
             redirect_uri: process.env.DELTA_REDIRECT_URL,
             client_secret: process.env.CLIENT_SECRET_DELTA_OAUTH,
             client_id: process.env.CLIENT_ID_DELTA_OAUTH,
             grant_type: "authorization_code",
         };
-        const res = await axios.post(url, qs.stringify(value), {
+        const res = await axios.post(url, qs.stringify(params), {
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
             },
@@ -122,13 +105,14 @@ const getDeltaUser = async ({ access_token }) => {
     try {
         const res = await axios.post(
             'https://auth.delta.nitt.edu/api/resources/user',
-            {},
+            {},// no params reqd
             {
                 headers: {
                     Authorization: `Bearer ${access_token}`,
                 },
             }
         );
+        console.log(res.data);
         return res.data;
     } catch (err) {
         console.error('Error getting Delta user profile:', err);
@@ -139,20 +123,11 @@ const getDeltaUser = async ({ access_token }) => {
 const CreateAndSendToken = (user, statusCode, res) => {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    res.cookie('token', token, { httpOnly: true, secure: true });
+    res.cookie('token', token, { httpOnly: true, secure: true, maxAge: 60 * 60 * 1000 });
     return token;
 
     // res.redirect(`/auth/profile?token=${token}`);
 };
-
-
-// router.get('/delta', passport.authenticate('delta', { scope: ['user'] }));
-
-// router.get('/delta/callback', passport.authenticate('delta', { failureRedirect: '/' }), (req, res) => {
-//     const token = jwt.sign({ userId: req.user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-//     res.cookie('token', token, { httpOnly: true, secure: true });
-//     res.redirect(`/auth/profile?token=${token}`);
-// });
 
 router.get('/profile', async (req, res) => {
     //const token = req.query.token || req.headers.authorization.split(' ')[1];

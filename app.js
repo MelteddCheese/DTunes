@@ -10,7 +10,6 @@ const LocalStrategy = require("passport-local");
 const passportLocalMongoose = require("passport-local-mongoose");
 const session = require("express-session");
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const { Strategy: OAuth2Strategy } = require('passport-oauth2');
 const qs = require('querystring');
 
 //models
@@ -59,12 +58,13 @@ passport.use(new GoogleStrategy({
 },
     async (accessToken, refreshToken, profile, done) => {
         try {
+            //console.log('...', accessToken, '...', refreshToken, '...', profile);
             let user = await User.findOne({ googleId: profile.id });
 
             if (!user) {
                 user = new User({
                     googleId: profile.id,
-                    username: profile.emails[0].split("@")[0],
+                    username: profile.emails[0].value,
                     //profile.emails[0].value
                 });
                 await user.save();
@@ -77,114 +77,13 @@ passport.use(new GoogleStrategy({
     }
 ));
 
-// class DeltaStrategy extends OAuth2Strategy {
-//     constructor(options, verify) {
-//         options = options || {};
-//         // this._oauth2._authorizeUrl = 'https://auth.delta.nitt.edu/authorize';
-//         // this._oauth2._accessTokenUrl = 'https://auth.delta.nitt.edu/api/oauth/token';
-//         options.authorizationURL = options.authorizationURL || 'https://auth.delta.nitt.edu/authorize';
-//         options.tokenURL = options.tokenURL || 'https://auth.delta.nitt.edu/api/oauth/token';
-//         super(options, verify);
-//         this.name = 'delta';
-//     }
-
-//     // userProfile(accessToken, done) {
-//     //     axios.post('https://auth.delta.nitt.edu/api/resources/user', {}, {
-//     //         headers: {
-//     //             Authorization: `Bearer ${accessToken}`
-//     //         }
-//     //     })
-//     //         .then(response => {
-//     //             const profile = {
-//     //                 provider: 'delta',
-//     //                 id: response.data.id,
-//     //                 username: response.data.email.split('@')[0],
-//     //                 displayName: response.data.name,
-//     //                 emails: [{ value: response.data.email }]
-//     //             };
-//     //             done(null, profile);
-//     //         })
-//     //         .catch(err => done(err));
-//     // }
-//     userProfile(accessToken, done) {
-//         this._oauth2.get('https://auth.delta.nitt.edu/api/resources/user', accessToken, (err, body) => {
-//             if (err) {
-//                 return done(err);
-//             }
-
-//             try {
-//                 const json = JSON.parse(body);
-//                 const profile = {
-//                     id: json.id,
-//                     username: json.username,
-//                     emails: [{ value: json.email }],
-//                     displayName: json.name,
-//                     provider: 'delta'
-//                 };
-//                 done(null, profile);
-//             } catch (err) {
-//                 console.error('Error during delta OAuth handler:', err);
-
-//                 res.status(404).json({
-//                     status: "fail",
-//                     message: err.message || 'Unknown error',
-//                 });
-//             }
-//         });
-//     }
-// }
-// passport.use(new DeltaStrategy({
-//     clientID: process.env.CLIENT_ID_DELTA_OAUTH,
-//     clientSecret: process.env.CLIENT_SECRET_DELTA_OAUTH,
-//     callbackURL: '/auth/delta/callback',
-//     passReqToCallback: true,
-//     grant_type: "authorization_code",
-//     response_type: "code",
-//     scope: "user",
-// }, async (accessToken, refreshToken, profile, done) => {
-//     try {
-//         let user = await User.findOne({ deltaId: profile.id });
-
-//         if (!user) {
-//             user = new User({
-//                 deltaId: profile.id,
-//                 username: profile.username,
-//                 // email: profile.emails[0].value,
-//                 // name: profile.displayName,
-//                 // photo: '/img/users/default-photo.png'
-//             });
-//             await user.save();
-//         }
-
-//         return done(null, user);
-//     } catch (err) {
-//         return done(err, false);
-//     }
-// }));
-
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
-
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, './public/uploads/playlist-image');
-    },
-    filename: function (req, file, cb) {
-        const playlistName = req.body.playlistName;
-        console.log(req.body, 'mdjmd');
-        console.log(playlistName, req.body.playlistName, 'playlistName');
-        const ext = path.extname(file.originalname);
-        cb(null, `${playlistName}${ext}`);
-    }
-});
-
-const upload = multer({ storage: storage });
 
 const authRoutes = require('./routes/auth');
 const friendRequests = require('./routes/friendRequest');
 const friendInvites = require('./routes/friendInvite');
 const errorHand = require('./middlewares/error'); //middlewares
-const songs = require("./models/songs");
 
 app.get('/', (req, res) => {
     res.render('index');
@@ -286,7 +185,7 @@ app.post('/homepage', authenticateJWT, async (req, res) => {
                 client_id: JAMENDO_CLIENT_ID,
                 limit: 10,
                 format: 'json',
-                include: 'lyrics',
+                include: 'lyrics+musicinfo',
             };
             if (genre) {
                 params.tags = genre;
@@ -303,7 +202,8 @@ app.post('/homepage', authenticateJWT, async (req, res) => {
                 image: track.album_image,
                 lyrics: track.lyrics,
                 duration: track.duration,
-                jamendoId: track.id
+                jamendoId: track.id,
+                genre: track.musicinfo.tags.genres[0]
             }));
             await addTracksToDatabase(tracks);
             // console.log(tracks);
@@ -348,18 +248,7 @@ app.get('/homepage', authenticateJWT, async (req, res) => {
     try {
         console.log('Loading');
         const genre = req.body.genre || '';
-        //const genre = req.query.genre || '';
-        //const user = req.user;
-        // const user = req.user.populate('playlists');
         console.log(genre);
-        // const userUpdate = await User.find({});
-        // const oneMonthAgo = new Date();
-        // oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-        // for (const user of userUpdate) {
-        //     user.listenedSongs = user.listenedSongs.filter(song => song.listenedAt >= oneMonthAgo);
-        //     await user.save();
-        // }
         const userss = await User.find().populate('playlists');
         for (const user of userss) {
             user.playlists = user.playlists.filter(playlist => playlist !== null);
@@ -379,7 +268,7 @@ app.get('/homepage', authenticateJWT, async (req, res) => {
                 });
             }
         }
-
+        //console.log(friendsData);
         const users = await User.find({});
         const receivedRequests = await Friend.find({ receiver: user, status: 0 });
         const pendingRequests = await Friend.find({ requester: user, status: 0 });
@@ -391,12 +280,12 @@ app.get('/homepage', authenticateJWT, async (req, res) => {
                 limit: 10,
                 format: 'json',
                 tags: genre,
-                include: 'lyrics',
-                random: true
+                include: 'lyrics+musicinfo',
+                random: true,
             }
         });
 
-        //console.log(response);
+        console.log('API Response:', response.data);
 
         const tracks = response.data.results.map(track => ({
             id: track.id,
@@ -407,12 +296,12 @@ app.get('/homepage', authenticateJWT, async (req, res) => {
             lyrics: track.lyrics,
             duration: track.duration,
             jamendoId: track.id,
-            genre: track.genre
+            genre: track.musicinfo.tags.genres[0]
         }));
-
+        //track.musicinfo.tags.genres[0]
         await addTracksToDatabase(tracks);
 
-        //console.log(tracks);
+        console.log(tracks);
 
         res.render('homepage', {
             users,
@@ -621,17 +510,26 @@ app.get('/likedSongs', authenticateJWT, async (req, res) => {
 
 app.post('/update-current-playing', authenticateJWT, async (req, res) => {
     try {
-        const { trackName, artistName, audioSrc } = req.body;
+        const { trackName, artistName, audioSrc, jamendoId } = req.body;
         const userId = req.user._id;
+        const user = req.user;
+        console.log(trackName, artistName, 'jamendoId', jamendoId);
         await User.findByIdAndUpdate(userId, {
             currentPlaying: { trackName, artistName, audioSrc }
         });
-        const songId = await songs.findOne({ name: trackName, artistName: artistName })._id;
-        await User.findByIdAndUpdate(req.user._id, {
-            $push: {
-                listenedSongs: { song: songId }
-            }
-        });
+        const song = await Song.findOne({ jamendoId: jamendoId });
+        console.log(song);
+        console.log(song._id);
+        //const user = await User.findById(userId);
+        if (song) {
+            user.listenedSongs.push(song._id);
+            await user.save();
+        }
+        // await User.findByIdAndUpdate(req.user._id, {
+        //     $push: {
+        //         listenedSongs: { songId }
+        //     }
+        // });
         res.status(200).json({ message: 'Current playing song updated successfully.' });
     } catch (err) {
         console.error('Error updating current playing song:', err);
@@ -640,10 +538,10 @@ app.post('/update-current-playing', authenticateJWT, async (req, res) => {
 });
 
 app.get('/songsHistory', authenticateJWT, async (req, res) => {
-    const user = await User.findById(req.user._id).populate({
-        path: 'listenedSongs.song',
-        populate: { path: 'name artist genre' }
-    });
+    const user = await User.findById(req.user._id).populate('listenedSongs'
+        // path: 'listenedSongs.song',
+        // populate: { path: 'name artist genre' }
+    );
     console.log(user);
     const totalSongs = user.listenedSongs.length;
     const genreCounts = {};
@@ -651,7 +549,7 @@ app.get('/songsHistory', authenticateJWT, async (req, res) => {
 
     user.listenedSongs.forEach(song => {
         const genre = song.genre;
-        const artist = song.artist;
+        const artist = song.artist_name;
         //const language = song.language.name;
         genreCounts[genre] = (genreCounts[genre] || 0) + 1;
         artistCounts[artist] = (artistCounts[artist] || 0) + 1;
@@ -667,6 +565,10 @@ app.get('/songsHistory', authenticateJWT, async (req, res) => {
         percentage: (count / totalSongs) * 100
     }));
 
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); // HTTP 1.1.
+    res.setHeader('Pragma', 'no-cache'); // HTTP 1.0.
+    res.setHeader('Expires', '0'); // Proxies.
+
     console.log(user.listenedSongs);
     res.render('songHistory', {
         listenedSongs: user.listenedSongs,
@@ -675,6 +577,20 @@ app.get('/songsHistory', authenticateJWT, async (req, res) => {
     });
 });
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, './public/uploads/playlist-image');
+    },
+    filename: function (req, file, cb) {
+        const playlistName = req.body.playlistName;
+        // console.log(req.body, 'mdjmd');
+        // console.log(playlistName, req.body.playlistName, 'playlistName');
+        const ext = path.extname(file.originalname);
+        cb(null, `${playlistName}${ext}`);
+    }
+});
+
+const upload = multer({ storage: storage });
 
 app.post('/upload', authenticateJWT, upload.single('profileImage'), async (req, res) => {
     try {
@@ -688,7 +604,7 @@ app.post('/upload', authenticateJWT, upload.single('profileImage'), async (req, 
         fs.rename(oldPath, newPath, (err) => {
             if (err) {
                 console.error('Error renaming file:', err);
-                return res.status(500).send('Error renaming file');
+                return res.status(500).send('Error renaming file'); // internal server error
             }
 
             const imagePath = `/uploads/playlist-image/${newFilename}`;
@@ -702,7 +618,6 @@ app.post('/upload', authenticateJWT, upload.single('profileImage'), async (req, 
                 })
                 .catch(err => {
                     console.error('Error updating playlist image:', err);
-                    // res.status(500).send('Error updating playlist image');
                     res.redirect(`/playlistSelect?message=Error updating playlist image&playlistId=${playlistId}`);
                 });
         });

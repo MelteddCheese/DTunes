@@ -33,10 +33,12 @@
             <img src="/images/liked-songs.jpg" alt="liked-songs">
             <h2>Liked Songs</h2>
         </div>
+        <div id="history">
+            <h2>History</h2>
+        </div>
         <div class="notificationsButton" onclick="toggleNotifications()">
             <h2>Notifications ▼</h2>
         </div>
-        <div id="history" class="notificationsButton">History</div>
         <div id="notifications"
             class="<%= receivedRequests.length === 0 && receivedInvites.length === 0 ? 'hidden' : '' %>">
             <h3>Friend requests</h3>
@@ -80,22 +82,26 @@
             <% if (friendsData.length> 0) { %>
                 <% friendsData.forEach(friend=> { %>
                     <div class="friend">
-                        <h4>
-                            <%= friend.username %>
-                        </h4>
-                        <% if (friend.currentPlaying) { %>
-                            <p>Listening to: <%= friend.currentPlaying.trackName %> by <%=
-                                        friend.currentPlaying.artistName %>
-                            </p>
-                            <% } else { %>
-                                <p>Not listening to anything right now</p>
-                                <% } %>
-                                    <img src="/images/partymode.jpg" alt="Partymode"
-                                        onclick="inviteToParty('<%= friend.username %>')">
+                        <div class="friend-details">
+                            <h4>
+                                <%= friend.username %>
+                            </h4>
+                            <% if (friend.currentPlaying) { %>
+                                <p>Listening to: <%= friend.currentPlaying.trackName %>
+                                </p>
+                                <p>by <%= friend.currentPlaying.artistName %>
+                                </p>
+                                <% } else { %>
+                                    <p>Not listening to anything right now</p>
+                                    <% } %>
+                        </div>
+                        <img src="/images/partymode.jpg" alt="Partymode"
+                            onclick="inviteToParty('<%= friend.username %>')">
                     </div>
                     <% }); %>
                         <% } %>
         </div>
+
     </div>
     <div id="main-content">
         <h1>DTunes</h1>
@@ -128,14 +134,15 @@
                 <div id="tracks">
                     <% tracks.forEach(track=> { %>
                         <div class="track" data-id="<%= track.jamendoId %>" data-audio="<%= track.audio %>"
-                            data-lyrics="<%= track.lyrics %>"
-                            onclick="playTrack('<%= track.audio %>', '<%= track.name %>', '<%= track.artist_name %>','<%= track.lyrics %>')">
+                            data-artist="<%= track.artist_name %>" data-lyrics="<%= track.lyrics %>"
+                            onclick="playTrack('<%= track.audio %>', '<%= track.name %>', '<%= track.artist_name %>','<%= track.lyrics %>','<%= track.jamendoId %>')">
                             <img src="<%= track.image %>" alt="Album Art">
                             <div class="track-info">
                                 <h2>
                                     <%= track.name %>
                                 </h2>
-                                <p>Artist: <%= track.artist_name %>
+                                <p>
+                                    <%= track.artist_name %>
                                 </p>
                                 <button
                                     onclick="event.stopPropagation(); likeSong('<%= track.jamendoId %>')">Like</button>

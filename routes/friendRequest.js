@@ -11,7 +11,7 @@ router.post('/send-request', authenticateJWT, async (req, res) => {
         const receiverId = req.body.receiverId;
 
         if (!mongoose.Types.ObjectId.isValid(receiverId)) {
-            return res.status(400).send('Invalid user ID');
+            return res.status(400).send('Invalid user ID'); //user or client side error
         }
 
         console.log(`Requester ID: ${requesterId}`);
@@ -38,7 +38,6 @@ router.post('/send-request', authenticateJWT, async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
-
 
 router.post('/decline-request', authenticateJWT, async (req, res) => {
     try {
@@ -80,18 +79,13 @@ router.post('/accept-request', authenticateJWT, async (req, res) => {
         if (!friendRequest) {
             return res.status(404).send('Friend request not found');
         }
-
         const requesterId = friendRequest.requester;
-
-        // Find the requester and receiver users
         const requester = await User.findById(requesterId);
         const receiver = await User.findById(userId);
-
         if (!requester || !receiver) {
             return res.status(404).send('User not found');
         }
 
-        // Add each other's usernames to their friends arrays
         if (!requester.friends.includes(receiver.username)) {
             requester.friends.push(receiver.username);
             await requester.save();
@@ -104,7 +98,7 @@ router.post('/accept-request', authenticateJWT, async (req, res) => {
 
         res.status(200).send('Friend request accepted and friends updated');
     } catch (error) {
-        console.log('error decining request', error);
+        console.log('error accepting request', error);
         res.status(500).send('Internal Server Error');
     }
 });

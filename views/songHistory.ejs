@@ -6,33 +6,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Listening History</title>
     <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        body {
+            background-color: #121212;
+            color: #fff;
+        }
+
         .container {
-            max-width: 800px;
+            display: flex;
+            width: 100%;
+            height: 100%;
             margin: auto;
             padding: 20px;
             font-family: Arial, sans-serif;
+            overflow-y: scroll;
+            background-color: #121212;
+            color: #fff;
         }
 
         .back-button {
-            display: inline-block;
+            display: flex;
             padding: 10px 20px;
             margin-bottom: 20px;
+            margin-right: 50px;
+            height: 5%;
             background-color: #007bff;
             color: white;
             text-decoration: none;
             border-radius: 5px;
         }
 
+        .ul {
+            padding: 10px;
+        }
+
         .chart {
             margin-bottom: 30px;
+            padding: 50px;
+        }
+
+        .head {
+            width: 100%;
+            display: flex;
+            margin-left: 3%;
+            margin-top: 3%;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
+    <div class="head">
         <a href="javascript:history.back()" class="back-button">Back</a>
         <h1>Listening History</h1>
+    </div>
+    <div class="container">
+
 
         <div class="chart">
             <h2>Genre Distribution</h2>
@@ -56,15 +88,17 @@
             </ul>
         </div>
 
-        <h2>Listened Songs</h2>
-        <ul>
-            <% listenedSongs.forEach(songs=> { %>
-                <li>
-                    <%= songs.song.name %> by <%= songs.song.artist_name %>
-                            (Listened on <%= new Date(songs.listenedAt).toLocaleDateString() %>)
-                </li>
-                <% }); %>
-        </ul>
+        <div class="chart">
+            <h2>Listened Songs</h2>
+            <ul>
+                <% listenedSongs.forEach(songs=> { %>
+                    <li>
+                        <%= songs.name %> by <%= songs.artist_name %>
+
+                    </li>
+                    <% }); %>
+            </ul>
+        </div>
     </div>
 </body>
 
